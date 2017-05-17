@@ -5,10 +5,15 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
+import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import java.util.HashMap;
 
 /**
  * An example SurfaceView for generating graphics on
@@ -31,6 +36,8 @@ public class DrawingSurfaceView extends SurfaceView implements SurfaceHolder.Cal
     private Paint goldPaint; //drawing variables (pre-defined for speed)
 
     public Ball ball; //public for easy access
+
+    public HashMap<Integer, Ball> touches = new HashMap<>();
 
 
     /**
@@ -118,9 +125,33 @@ public class DrawingSurfaceView extends SurfaceView implements SurfaceHolder.Cal
 
         canvas.drawColor(Color.rgb(51,10,111)); //purple out the background
 
-        canvas.drawCircle(ball.cx, ball.cy, ball.radius, whitePaint); //we can draw directly onto the canvas
+        //canvas.drawCircle(ball.cx, ball.cy, ball.radius, whitePaint); //we can draw directly onto the canvas
+
+        for (Ball ball : this.touches.values()) {
+            canvas.drawCircle(ball.cx, ball.cy, ball.radius, goldPaint);
+        }
     }
 
+    public synchronized void addTouch(MotionEvent event, int pointerIndex) {
+        int pointerID = MotionEventCompat.getPointerId(event, pointerIndex);
+        Log.v(TAG, "Adding ID: " + pointerID);
+        this.touches.put(pointerID, new Ball((int)event.getX(pointerIndex), (int)event.getY(pointerIndex) + -200, 125));
+        Log.v(TAG, "updated HashMap" + this.touches.toString());
+    }
+
+    public synchronized void removeTouch(MotionEvent event, int pointerIndex) {
+        int pointerID = MotionEventCompat.getPointerId(event, pointerIndex);
+        this.touches.remove(pointerID);
+        Log.v(TAG, "Removing ID: " + pointerID);
+        Log.v(TAG, "updated HashMap" + this.touches.toString());
+    }
+
+    public synchronized void moveTouch(int pointerID, float x, float y) {
+        Ball ball = touches.get(pointerID);
+        ball.setX(x);
+        ball.setY(y);
+        touches.put(pointerID, ball);
+    }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
